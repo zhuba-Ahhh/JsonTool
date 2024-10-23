@@ -96,36 +96,82 @@
         border-radius: 4px;
       }
 
-      .mapping-grid {
-        display: flex;
-        flex-direction: column;
-      }
-      .mapping-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-      }
-      .mapping-item {
-        width: 48%;
+      .toggle-button {
         display: flex;
         align-items: center;
+        cursor: pointer;
+        user-select: none;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.3s;
       }
-      .mapping-item label {
-        width: 30%;
+
+      .toggle-button:hover {
+        background-color: #f0f0f0;
+      }
+
+      .toggle-icon {
+        display: flex;
+        align-items: center;
+        margin-right: 5px;
+      }
+
+      .toggle-icon svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .toggle-text {
         font-weight: bold;
-        margin-right: 10px;
       }
-      .mapping-item input {
-        width: 70%;
+
+      .mapping-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .mapping-row {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 250px;
+      }
+
+      .mapping-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .mapping-item input[type="checkbox"] {
+        margin-right: 5px;
+      }
+
+      .mapping-item label {
+        min-width: 80px;
+        margin-right: 5px;
+      }
+
+      .mapping-item input[type="text"] {
+        flex: 1;
+        min-width: 0;
         padding: 5px;
         border: 1px solid #ddd;
         border-radius: 4px;
       }
 
-      .toggle-button svg {
-        margin-left: 5px;
-        width: 15px;
-        height: 15px;
+      .mapping-item button {
+        padding: 5px 10px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .mapping-item button:hover {
+        background-color: #d32f2f;
       }
     </style>
   </head>
@@ -137,12 +183,12 @@
     />
     <link
       rel="preload"
-      href="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"
+      href="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"
       as="script"
     />
     <link
       rel="preload"
-      href="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+      href="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"
       as="script"
     />
     <link
@@ -157,11 +203,11 @@
     ></script>
     <script
       defer
-      src="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"
+      src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"
     ></script>
     <script
       defer
-      src="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+      src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"
     ></script>
     <script
       defer
@@ -173,17 +219,74 @@
       const { default: JSONView } = reactJsonView;
 
       const KeyMappingForm = ({ keys, onMappingChange }) => {
-        const [mappings, setMappings] = useState({});
+        const [mappings, setMappings] = useState(
+          keys.reduce((acc, key) => ({ ...acc, [key]: key }), {})
+        );
+        const [selectedKeys, setSelectedKeys] = useState(
+          keys.reduce((acc, key) => ({ ...acc, [key]: true }), {})
+        );
         const [isExpanded, setIsExpanded] = useState(true);
 
-        const handleInputChange = useCallback((key, value) => {
-          setMappings(prev => ({ ...prev, [key]: value }));
-          onMappingChange(prev => ({ ...prev, [key]: value }));
-        }, [onMappingChange]);
+        useEffect(() => {
+          onMappingChange((prev) => ({
+            ...prev,
+            mappings,
+            selectedKeys,
+          }));
+        }, []);
 
-        const handleBlur = (key, value) => {
-          onMappingChange({ ...mappings, [key]: value });
-        };
+        const handleInputChange = useCallback(
+          (key, value) => {
+            setMappings((prev) => ({ ...prev, [key]: value }));
+            onMappingChange((prev) => ({
+              ...prev,
+              mappings: { ...prev.mappings, [key]: value },
+              selectedKeys,
+            }));
+          },
+          [onMappingChange, selectedKeys]
+        );
+
+        const handleCheckboxChange = useCallback(
+          (key) => {
+            setSelectedKeys((prev) => {
+              const newSelectedKeys = { ...prev, [key]: !prev[key] };
+              onMappingChange((prevMapping) => ({
+                ...prevMapping,
+                selectedKeys: newSelectedKeys,
+              }));
+              return newSelectedKeys;
+            });
+          },
+          [onMappingChange]
+        );
+
+        const handleRemoveKey = useCallback(
+          (keyToRemove) => {
+            setSelectedKeys((prev) => {
+              const { [keyToRemove]: _, ...rest } = prev;
+              onMappingChange((prevMapping) => {
+                const {
+                  mappings: prevMappings,
+                  selectedKeys: prevSelectedKeys,
+                } = prevMapping;
+                const { [keyToRemove]: __, ...restMappings } = prevMappings;
+                const { [keyToRemove]: ___, ...restSelectedKeys } =
+                  prevSelectedKeys;
+                return {
+                  mappings: restMappings,
+                  selectedKeys: restSelectedKeys,
+                };
+              });
+              return rest;
+            });
+            setMappings((prev) => {
+              const { [keyToRemove]: _, ...rest } = prev;
+              return rest;
+            });
+          },
+          [onMappingChange]
+        );
 
         return (
           <div className="key-mapping-form">
@@ -191,41 +294,40 @@
               className="toggle-button"
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              {isExpanded ? (
-                <svg viewBox="0 0 15 15" fill="currentColor">
-                  <path d="M0 5l6 6 6-6z" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 15 15" fill="currentColor">
-                  <path d="M0 14l6-6-6-6z" />
-                </svg>
-              )}
+              <span className="toggle-icon">
+                {isExpanded ? (
+                  <svg viewBox="0 0 15 15" fill="currentColor">
+                    <path d="M0 5l6 6 6-6z" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 15 15" fill="currentColor">
+                    <path d="M0 14l6-6-6-6z" />
+                  </svg>
+                )}
+              </span>
+              <span className="toggle-text">表头映射</span>
             </div>
             {isExpanded && (
               <div className="mapping-grid">
-                {keys
-                  .reduce((rows, key, index) => {
-                    if (index % 2 === 0) rows.push([]);
-                    rows[rows.length - 1].push(
-                      <div key={key} className="mapping-item">
-                        <label>{key}: </label>
-                        <input
-                          type="text"
-                          value={mappings[key] || key}
-                          onChange={(e) =>
-                            handleInputChange(key, e.target.value)
-                          }
-                          onBlur={(e) => handleBlur(key, e.target.value)}
-                        />
-                      </div>
-                    );
-                    return rows;
-                  }, [])
-                  .map((row, rowIndex) => (
-                    <div key={rowIndex} className="mapping-row">
-                      {row}
+                {Object.keys(selectedKeys).map((key, index) => (
+                  <div key={key} className="mapping-row">
+                    <div className="mapping-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedKeys[key]}
+                        onChange={() => handleCheckboxChange(key)}
+                      />
+                      <label>{key}: </label>
+                      <input
+                        type="text"
+                        value={mappings[key] || key}
+                        onChange={(e) => handleInputChange(key, e.target.value)}
+                        disabled={!selectedKeys[key]}
+                      />
+                      <button onClick={() => handleRemoveKey(key)}>删除</button>
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -255,7 +357,7 @@
 
         useEffect(() => {
           viewJsonData();
-        }, [viewJsonData]);
+        }, []);
 
         const clearJsonData = useCallback(() => {
           setJsonData("{}");
@@ -273,13 +375,17 @@
             localStorage.setItem("jsonData", jsonData);
 
             data = Array.isArray(data) ? data : [data];
-            const headers = Object.keys(data[0]);
+
+            const selectedHeaders = Object.keys(
+              keyMappings.selectedKeys
+            ).filter((key) => keyMappings.selectedKeys[key]);
+
             const csvContent = [
-              headers
-                .map((header) => `"${keyMappings[header] || header}"`)
+              selectedHeaders
+                .map((header) => `"${keyMappings.mappings[header] || header}"`)
                 .join(","),
               ...data.map((row) =>
-                headers
+                selectedHeaders
                   .map((header) => {
                     let value = row[header] || "";
                     value = Array.isArray(value)
@@ -303,6 +409,7 @@
             link.click();
           } catch (error) {
             alert("输入的JSON数据格式有误，请检查后重试！");
+            console.error(error);
           }
         }, [jsonData, parsedData, keyMappings]);
 
