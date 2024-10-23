@@ -55,103 +55,116 @@
     <script type="text/babel">
       const { useState, useEffect, useCallback } = React;
       const { default: JSONView } = reactJsonView;
-      const {
-        Button,
-        Input,
-        Checkbox,
-        Space,
-        Typography,
-        message,
-        Collapse,
-        List,
-      } = antd;
-      const { TextArea, Search } = Input;
+      const { Button, Input, Checkbox, Space, Typography, message, Collapse } =
+        antd;
+      const { TextArea, Search = () => null } = Input;
       const { Title } = Typography;
       const { Panel } = Collapse;
 
       const KeyMappingForm = ({ keys, onMappingChange }) => {
-        const [mappings, setMappings] = useState(
-          keys.reduce((acc, key) => ({ ...acc, [key]: key }), {})
-        );
-        const [selectedKeys, setSelectedKeys] = useState(
-          keys.reduce((acc, key) => ({ ...acc, [key]: true }), {})
-        );
-        const [sortOrder, setSortOrder] = useState('asc');
-        const [searchTerm, setSearchTerm] = useState('');
+        const [state, setState] = useState({
+          mappings: keys.reduce((acc, key) => ({ ...acc, [key]: key }), {}),
+          selectedKeys: keys.reduce(
+            (acc, key) => ({ ...acc, [key]: true }),
+            {}
+          ),
+          sortOrder: "asc",
+          searchTerm: "",
+        });
 
         useEffect(() => {
-          onMappingChange({ mappings, selectedKeys });
-        }, [mappings, selectedKeys]);
+          onMappingChange({
+            mappings: state.mappings,
+            selectedKeys: state.selectedKeys,
+          });
+        }, [state.mappings, state.selectedKeys]);
+
+        const updateState = (updates) => {
+          setState((prev) => ({ ...prev, ...updates }));
+        };
 
         const handleInputChange = (key, value) => {
-          setMappings((prev) => ({ ...prev, [key]: value }));
+          updateState({ mappings: { ...state.mappings, [key]: value } });
         };
 
         const handleCheckboxChange = (key) => {
-          setSelectedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+          updateState({
+            selectedKeys: {
+              ...state.selectedKeys,
+              [key]: !state.selectedKeys[key],
+            },
+          });
         };
 
         const handleRemoveKey = (keyToRemove) => {
-          setSelectedKeys((prev) => {
-            const { [keyToRemove]: _, ...rest } = prev;
-            return rest;
-          });
-          setMappings((prev) => {
-            const { [keyToRemove]: _, ...rest } = prev;
-            return rest;
+          const { [keyToRemove]: _, ...restSelectedKeys } = state.selectedKeys;
+          const { [keyToRemove]: __, ...restMappings } = state.mappings;
+          updateState({
+            selectedKeys: restSelectedKeys,
+            mappings: restMappings,
           });
         };
 
-        const filteredKeys = Object.keys(selectedKeys).filter(key =>
-          key.toLowerCase().includes(searchTerm.toLowerCase())
+        const filteredKeys = Object.keys(state.selectedKeys).filter((key) =>
+          key.toLowerCase().includes(state.searchTerm.toLowerCase())
         );
+
+        const toggleAllSelection = () => {
+          const allSelected = Object.values(state.selectedKeys).every((v) => v);
+          updateState({
+            selectedKeys: Object.keys(state.selectedKeys).reduce(
+              (acc, key) => ({ ...acc, [key]: !allSelected }),
+              {}
+            ),
+          });
+        };
+
+        const toggleSortOrder = () => {
+          const newSortOrder = state.sortOrder === "asc" ? "desc" : "asc";
+          const sortedKeys = Object.keys(state.selectedKeys).sort((a, b) =>
+            newSortOrder === "asc" ? a.localeCompare(b) : b.localeCompare(a)
+          );
+          updateState({
+            sortOrder: newSortOrder,
+            selectedKeys: sortedKeys.reduce(
+              (acc, key) => ({ ...acc, [key]: state.selectedKeys[key] }),
+              {}
+            ),
+            mappings: sortedKeys.reduce(
+              (acc, key) => ({ ...acc, [key]: state.mappings[key] }),
+              {}
+            ),
+          });
+        };
 
         return (
           <Collapse defaultActiveKey={["1"]}>
             <Panel header="表头映射" key="1">
-              <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <Search
-                  placeholder="搜索键名"
-                  onSearch={(value) => setSearchTerm(value)}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ width: 200 }}
-                />
+              <Space
+                style={{
+                  width: "100%",
+                  justifyContent: "space-between",
+                  marginBottom: "16px",
+                }}
+              >
+                {Search && (
+                  <Search
+                    placeholder="搜索键名"
+                    onSearch={(value) => updateState({ searchTerm: value })}
+                    onChange={(e) =>
+                      updateState({ searchTerm: e.target.value })
+                    }
+                    style={{ width: 200 }}
+                  />
+                )}
                 <Space>
-                  <Button
-                    onClick={() => {
-                      const allSelected = Object.values(selectedKeys).every((v) => v);
-                      setSelectedKeys((prevKeys) =>
-                        Object.keys(prevKeys).reduce(
-                          (acc, key) => ({ ...acc, [key]: !allSelected }),
-                          {}
-                        )
-                      );
-                    }}
-                  >
-                    {Object.values(selectedKeys).every((v) => v) ? "取消全选" : "全选"}
+                  <Button onClick={toggleAllSelection}>
+                    {Object.values(state.selectedKeys).every((v) => v)
+                      ? "取消全选"
+                      : "全选"}
                   </Button>
-                  <Button
-                    onClick={() => {
-                      // 实现按字母顺序排序切换逻辑
-                      const sortedKeys = Object.keys(selectedKeys).sort((a, b) => 
-                        sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
-                      );
-                      setSelectedKeys((prevKeys) =>
-                        sortedKeys.reduce(
-                          (acc, key) => ({ ...acc, [key]: prevKeys[key] }),
-                          {}
-                        )
-                      );
-                      setMappings((prevMappings) =>
-                        sortedKeys.reduce(
-                          (acc, key) => ({ ...acc, [key]: prevMappings[key] }),
-                          {}
-                        )
-                      );
-                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                    }}
-                  >
-                    {sortOrder === 'asc' ? '按字母降序' : '按字母升序'}
+                  <Button onClick={toggleSortOrder}>
+                    {state.sortOrder === "asc" ? "按字母降序" : "按字母升序"}
                   </Button>
                 </Space>
               </Space>
@@ -159,13 +172,24 @@
                 {filteredKeys.map((key) => (
                   <div key={key} className="mapping-item">
                     <Checkbox
-                      checked={selectedKeys[key]}
+                      checked={state.selectedKeys[key]}
                       onChange={() => handleCheckboxChange(key)}
                     />
+                    <Typography.Text
+                      style={{
+                        marginRight: "8px",
+                        minWidth: "60px",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {key}
+                    </Typography.Text>
                     <Input
-                      value={mappings[key] || key}
+                      value={state.mappings[key] || key}
                       onChange={(e) => handleInputChange(key, e.target.value)}
-                      disabled={!selectedKeys[key]}
+                      disabled={!state.selectedKeys[key]}
                       style={{ width: "60%" }}
                     />
                     <Button danger onClick={() => handleRemoveKey(key)}>
@@ -180,55 +204,62 @@
       };
 
       const App = () => {
-        const [jsonData, setJsonData] = useState(
-          localStorage.getItem("jsonData") || "{}"
-        );
-        const [parsedData, setParsedData] = useState(null);
-        const [keyMappings, setKeyMappings] = useState({});
+        const [state, setState] = useState({
+          jsonData: localStorage.getItem("jsonData") || "{}",
+          parsedData: null,
+          keyMappings: {},
+        });
 
-        const viewJsonData = useCallback(() => {
-          try {
-            const data = JSON.parse(jsonData);
-            localStorage.setItem("jsonData", jsonData);
-            setParsedData(data);
-            message.success("解析成功");
-            ReactDOM.render(
-              <JSONView src={data} />,
-              document.getElementById("jsonViewer")
-            );
-          } catch (error) {
-            message.error("输入的JSON数据格式有误，请检查后重试！");
-          }
-        }, [jsonData]);
+        const updateState = (updates) => {
+          setState((prev) => ({ ...prev, ...updates }));
+        };
+
+        const handleJsonData = useCallback(
+          (action) => {
+            try {
+              let data;
+              if (action === "view") {
+                data = JSON.parse(state.jsonData);
+                localStorage.setItem("jsonData", state.jsonData);
+                updateState({ parsedData: data });
+                message.success("解析成功");
+              } else if (action === "clear") {
+                data = {};
+                updateState({ jsonData: "{}", parsedData: null });
+                localStorage.setItem("jsonData", "{}");
+              }
+              ReactDOM.render(
+                <JSONView src={data} />,
+                document.getElementById("jsonViewer")
+              );
+            } catch (error) {
+              message.error("输入的JSON数据格式有误，请检查后重试！");
+            }
+          },
+          [state.jsonData]
+        );
 
         useEffect(() => {
-          viewJsonData();
-        }, []);
-
-        const clearJsonData = useCallback(() => {
-          setJsonData("{}");
-          setParsedData(null);
-          localStorage.setItem("jsonData", "{}");
-          ReactDOM.render(
-            <JSONView src={{}} />,
-            document.getElementById("jsonViewer")
-          );
+          handleJsonData("view");
         }, []);
 
         const exportToJson = useCallback(() => {
           try {
-            let data = parsedData || JSON.parse(jsonData);
-            localStorage.setItem("jsonData", jsonData);
+            let data = state.parsedData || JSON.parse(state.jsonData);
+            localStorage.setItem("jsonData", state.jsonData);
 
             data = Array.isArray(data) ? data : [data];
 
             const selectedHeaders = Object.keys(
-              keyMappings.selectedKeys
-            ).filter((key) => keyMappings.selectedKeys[key]);
+              state.keyMappings.selectedKeys
+            ).filter((key) => state.keyMappings.selectedKeys[key]);
 
             const csvContent = [
               selectedHeaders
-                .map((header) => `"${keyMappings.mappings[header] || header}"`)
+                .map(
+                  (header) =>
+                    `"${state.keyMappings.mappings[header] || header}"`
+                )
                 .join(","),
               ...data.map((row) =>
                 selectedHeaders
@@ -257,33 +288,37 @@
             message.error("导出失败，请检查数据格式！");
             console.error(error);
           }
-        }, [jsonData, parsedData, keyMappings]);
+        }, [state.jsonData, state.parsedData, state.keyMappings]);
 
         return (
           <div className="json-converter">
             <Title level={2}>JSON to CSV 转换器</Title>
             <Space className="action-buttons" style={{ marginBottom: 16 }}>
-              <Button type="primary" onClick={viewJsonData}>
+              <Button type="primary" onClick={() => handleJsonData("view")}>
                 解析
               </Button>
               <Button onClick={exportToJson}>导出</Button>
-              <Button danger onClick={clearJsonData}>
+              <Button danger onClick={() => handleJsonData("clear")}>
                 清空
               </Button>
             </Space>
             <TextArea
-              value={jsonData}
-              onChange={(e) => setJsonData(e.target.value)}
+              value={state.jsonData}
+              onChange={(e) => updateState({ jsonData: e.target.value })}
               placeholder="请输入或粘贴JSON数据..."
               rows={10}
               style={{ marginBottom: 16 }}
             />
-            {parsedData && Object.keys(parsedData).length > 0 && (
+            {state.parsedData && Object.keys(state.parsedData).length > 0 && (
               <KeyMappingForm
                 keys={Object.keys(
-                  Array.isArray(parsedData) ? parsedData[0] : parsedData
+                  Array.isArray(state.parsedData)
+                    ? state.parsedData[0]
+                    : state.parsedData
                 )}
-                onMappingChange={setKeyMappings}
+                onMappingChange={(mappings) =>
+                  updateState({ keyMappings: mappings })
+                }
               />
             )}
             <div id="jsonViewer" className="json-viewer"></div>
