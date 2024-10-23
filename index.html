@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>JSON to CSV 转换器</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/reset.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/reset.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.7/dayjs.min.js"></script>
@@ -13,6 +16,7 @@
         background-color: #f0f2f5;
         padding: 20px;
       }
+
       .json-converter {
         max-width: 1000px;
         margin: auto;
@@ -21,18 +25,21 @@
         border-radius: 8px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
+
       .json-viewer {
         border: 1px solid #d9d9d9;
         border-radius: 2px;
         padding: 16px;
         margin-top: 16px;
       }
+
       .mapping-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         gap: 16px;
         margin-top: 16px;
       }
+
       .mapping-item {
         display: flex;
         align-items: center;
@@ -40,6 +47,7 @@
       }
     </style>
   </head>
+
   <body>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"></script>
@@ -47,8 +55,17 @@
     <script type="text/babel">
       const { useState, useEffect, useCallback } = React;
       const { default: JSONView } = reactJsonView;
-      const { Button, Input, Checkbox, Space, Typography, message, Collapse } = antd;
-      const { TextArea } = Input;
+      const {
+        Button,
+        Input,
+        Checkbox,
+        Space,
+        Typography,
+        message,
+        Collapse,
+        List,
+      } = antd;
+      const { TextArea, Search } = Input;
       const { Title } = Typography;
       const { Panel } = Collapse;
 
@@ -59,35 +76,87 @@
         const [selectedKeys, setSelectedKeys] = useState(
           keys.reduce((acc, key) => ({ ...acc, [key]: true }), {})
         );
+        const [sortOrder, setSortOrder] = useState('asc');
+        const [searchTerm, setSearchTerm] = useState('');
 
         useEffect(() => {
           onMappingChange({ mappings, selectedKeys });
         }, [mappings, selectedKeys]);
 
         const handleInputChange = (key, value) => {
-          setMappings(prev => ({ ...prev, [key]: value }));
+          setMappings((prev) => ({ ...prev, [key]: value }));
         };
 
         const handleCheckboxChange = (key) => {
-          setSelectedKeys(prev => ({ ...prev, [key]: !prev[key] }));
+          setSelectedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
         };
 
         const handleRemoveKey = (keyToRemove) => {
-          setSelectedKeys(prev => {
+          setSelectedKeys((prev) => {
             const { [keyToRemove]: _, ...rest } = prev;
             return rest;
           });
-          setMappings(prev => {
+          setMappings((prev) => {
             const { [keyToRemove]: _, ...rest } = prev;
             return rest;
           });
         };
 
+        const filteredKeys = Object.keys(selectedKeys).filter(key =>
+          key.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
         return (
-          <Collapse defaultActiveKey={['1']}>
+          <Collapse defaultActiveKey={["1"]}>
             <Panel header="表头映射" key="1">
+              <Space style={{ width: '100%', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <Search
+                  placeholder="搜索键名"
+                  onSearch={(value) => setSearchTerm(value)}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ width: 200 }}
+                />
+                <Space>
+                  <Button
+                    onClick={() => {
+                      const allSelected = Object.values(selectedKeys).every((v) => v);
+                      setSelectedKeys((prevKeys) =>
+                        Object.keys(prevKeys).reduce(
+                          (acc, key) => ({ ...acc, [key]: !allSelected }),
+                          {}
+                        )
+                      );
+                    }}
+                  >
+                    {Object.values(selectedKeys).every((v) => v) ? "取消全选" : "全选"}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // 实现按字母顺序排序切换逻辑
+                      const sortedKeys = Object.keys(selectedKeys).sort((a, b) => 
+                        sortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+                      );
+                      setSelectedKeys((prevKeys) =>
+                        sortedKeys.reduce(
+                          (acc, key) => ({ ...acc, [key]: prevKeys[key] }),
+                          {}
+                        )
+                      );
+                      setMappings((prevMappings) =>
+                        sortedKeys.reduce(
+                          (acc, key) => ({ ...acc, [key]: prevMappings[key] }),
+                          {}
+                        )
+                      );
+                      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    }}
+                  >
+                    {sortOrder === 'asc' ? '按字母降序' : '按字母升序'}
+                  </Button>
+                </Space>
+              </Space>
               <div className="mapping-grid">
-                {Object.keys(selectedKeys).map((key) => (
+                {filteredKeys.map((key) => (
                   <div key={key} className="mapping-item">
                     <Checkbox
                       checked={selectedKeys[key]}
@@ -97,9 +166,11 @@
                       value={mappings[key] || key}
                       onChange={(e) => handleInputChange(key, e.target.value)}
                       disabled={!selectedKeys[key]}
-                      style={{ width: '60%' }}
+                      style={{ width: "60%" }}
                     />
-                    <Button danger onClick={() => handleRemoveKey(key)}>删除</Button>
+                    <Button danger onClick={() => handleRemoveKey(key)}>
+                      删除
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -151,8 +222,9 @@
 
             data = Array.isArray(data) ? data : [data];
 
-            const selectedHeaders = Object.keys(keyMappings.selectedKeys)
-              .filter((key) => keyMappings.selectedKeys[key]);
+            const selectedHeaders = Object.keys(
+              keyMappings.selectedKeys
+            ).filter((key) => keyMappings.selectedKeys[key]);
 
             const csvContent = [
               selectedHeaders
@@ -162,7 +234,9 @@
                 selectedHeaders
                   .map((header) => {
                     let value = row[header] || "";
-                    value = Array.isArray(value) ? value.join("\n") : String(value);
+                    value = Array.isArray(value)
+                      ? value.join("\n")
+                      : String(value);
                     return `"${value.replace(/"/g, '""')}"`;
                   })
                   .join(",")
@@ -174,7 +248,10 @@
             });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `json数据表_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 14)}.csv`;
+            link.download = `json数据表_${new Date()
+              .toISOString()
+              .replace(/[-:]/g, "")
+              .slice(0, 14)}.csv`;
             link.click();
           } catch (error) {
             message.error("导出失败，请检查数据格式！");
@@ -186,9 +263,13 @@
           <div className="json-converter">
             <Title level={2}>JSON to CSV 转换器</Title>
             <Space className="action-buttons" style={{ marginBottom: 16 }}>
-              <Button type="primary" onClick={viewJsonData}>解析</Button>
+              <Button type="primary" onClick={viewJsonData}>
+                解析
+              </Button>
               <Button onClick={exportToJson}>导出</Button>
-              <Button danger onClick={clearJsonData}>清空</Button>
+              <Button danger onClick={clearJsonData}>
+                清空
+              </Button>
             </Space>
             <TextArea
               value={jsonData}
@@ -199,7 +280,9 @@
             />
             {parsedData && Object.keys(parsedData).length > 0 && (
               <KeyMappingForm
-                keys={Object.keys(Array.isArray(parsedData) ? parsedData[0] : parsedData)}
+                keys={Object.keys(
+                  Array.isArray(parsedData) ? parsedData[0] : parsedData
+                )}
                 onMappingChange={setKeyMappings}
               />
             )}
