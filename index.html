@@ -67,7 +67,6 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         padding: 10px;
-        margin-top: 20px;
       }
       textarea {
         width: 100%;
@@ -90,6 +89,7 @@
       }
 
       .key-mapping-form {
+        margin-top: 20px;
         margin-bottom: 20px;
         border: 1px solid #ddd;
         padding: 15px;
@@ -130,27 +130,56 @@
     </style>
   </head>
   <body>
-    <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
-    <link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
-    <link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js" as="script">
+    <link
+      rel="preload"
+      href="https://unpkg.com/@babel/standalone/babel.min.js"
+      as="script"
+    />
+    <link
+      rel="preload"
+      href="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"
+      as="script"
+    />
+    <link
+      rel="preload"
+      href="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+      as="script"
+    />
+    <link
+      rel="preload"
+      href="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"
+      as="script"
+    />
 
-    <script defer src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script defer src="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script defer src="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"></script>
+    <script
+      defer
+      src="https://unpkg.com/@babel/standalone/babel.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"
+    ></script>
 
     <script type="text/babel">
-      const { useState, useEffect } = React;
+      const { useState, useEffect, useCallback } = React;
       const { default: JSONView } = reactJsonView;
 
       const KeyMappingForm = ({ keys, onMappingChange }) => {
         const [mappings, setMappings] = useState({});
         const [isExpanded, setIsExpanded] = useState(true);
 
-        const handleInputChange = (key, value) => {
-          setMappings((prev) => ({ ...prev, [key]: value }));
-        };
+        const handleInputChange = useCallback((key, value) => {
+          setMappings(prev => ({ ...prev, [key]: value }));
+          onMappingChange(prev => ({ ...prev, [key]: value }));
+        }, [onMappingChange]);
 
         const handleBlur = (key, value) => {
           onMappingChange({ ...mappings, [key]: value });
@@ -158,7 +187,7 @@
 
         return (
           <div className="key-mapping-form">
-            <div 
+            <div
               className="toggle-button"
               onClick={() => setIsExpanded(!isExpanded)}
             >
@@ -174,25 +203,29 @@
             </div>
             {isExpanded && (
               <div className="mapping-grid">
-                {keys.reduce((rows, key, index) => {
-                  if (index % 2 === 0) rows.push([]);
-                  rows[rows.length - 1].push(
-                    <div key={key} className="mapping-item">
-                      <label>{key}: </label>
-                      <input
-                        type="text"
-                        value={mappings[key] || key}
-                        onChange={(e) => handleInputChange(key, e.target.value)}
-                        onBlur={(e) => handleBlur(key, e.target.value)}
-                      />
+                {keys
+                  .reduce((rows, key, index) => {
+                    if (index % 2 === 0) rows.push([]);
+                    rows[rows.length - 1].push(
+                      <div key={key} className="mapping-item">
+                        <label>{key}: </label>
+                        <input
+                          type="text"
+                          value={mappings[key] || key}
+                          onChange={(e) =>
+                            handleInputChange(key, e.target.value)
+                          }
+                          onBlur={(e) => handleBlur(key, e.target.value)}
+                        />
+                      </div>
+                    );
+                    return rows;
+                  }, [])
+                  .map((row, rowIndex) => (
+                    <div key={rowIndex} className="mapping-row">
+                      {row}
                     </div>
-                  );
-                  return rows;
-                }, []).map((row, rowIndex) => (
-                  <div key={rowIndex} className="mapping-row">
-                    {row}
-                  </div>
-                ))}
+                  ))}
               </div>
             )}
           </div>
@@ -206,23 +239,7 @@
         const [parsedData, setParsedData] = useState(null);
         const [keyMappings, setKeyMappings] = useState({});
 
-        useEffect(() => {
-          if (jsonData !== "{}") {
-            viewJsonData(true);
-          }
-        }, []);
-
-        const handleJsonChange = (event) => {
-          setJsonData(event.target.value);
-        };
-
-        const clearJsonData = () => {
-          setJsonData("{}");
-          localStorage.setItem("jsonData", "{}");
-          ReactDOM.render(null, document.getElementById("jsonViewer"));
-        };
-
-        const viewJsonData = (isInit = false) => {
+        const viewJsonData = useCallback(() => {
           try {
             const data = JSON.parse(jsonData);
             localStorage.setItem("jsonData", jsonData);
@@ -234,9 +251,23 @@
           } catch (error) {
             alert("输入的JSON数据格式有误，请检查后重试！");
           }
-        };
+        }, [jsonData]);
 
-        const exportToJson = () => {
+        useEffect(() => {
+          viewJsonData();
+        }, [viewJsonData]);
+
+        const clearJsonData = useCallback(() => {
+          setJsonData("{}");
+          setParsedData(null);
+          localStorage.setItem("jsonData", "{}");
+          ReactDOM.render(
+            <JSONView src={{}} />,
+            document.getElementById("jsonViewer")
+          );
+        }, []);
+
+        const exportToJson = useCallback(() => {
           try {
             let data = parsedData || JSON.parse(jsonData);
             localStorage.setItem("jsonData", jsonData);
@@ -273,7 +304,7 @@
           } catch (error) {
             alert("输入的JSON数据格式有误，请检查后重试！");
           }
-        };
+        }, [jsonData, parsedData, keyMappings]);
 
         const handleMappingChange = (newMappings) => {
           setKeyMappings(newMappings);
@@ -283,7 +314,7 @@
           <div className="json-converter">
             <nav className="action-buttons">
               <button
-                onClick={() => viewJsonData()}
+                onClick={viewJsonData}
                 className="action-button parse-button"
               >
                 解析
@@ -309,7 +340,7 @@
               rows="10"
               cols="50"
             />
-            {parsedData && (
+            {parsedData && Object.keys(parsedData).length > 0 && (
               <KeyMappingForm
                 keys={Object.keys(
                   Array.isArray(parsedData) ? parsedData[0] : parsedData
