@@ -12,6 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.7/dayjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/antd.min.js"></script>
+    <!-- 添加 Ant Design 图标库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ant-design-icons/5.0.1/index.umd.min.js"></script>
     <style>
       body {
         background-color: #f0f2f5;
@@ -19,7 +21,7 @@
       }
 
       .json-converter {
-        max-width: 1000px;
+        max-width: 1200px; /* 增加最大宽度 */
         margin: auto;
         background: #fff;
         padding: 32px;
@@ -50,6 +52,7 @@
         padding: 12px;
         border-radius: 6px;
         transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
       }
 
       .mapping-item:hover {
@@ -57,17 +60,49 @@
       }
 
       .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 24px;
+      }
+
+      .action-buttons .ant-space {
+        flex-grow: 1;
+      }
+
+      .action-buttons .ant-btn {
+        min-width: 100px; /* 设置按钮最小宽度 */
       }
 
       .ant-collapse {
         margin-top: 12px;
         border-radius: 8px;
         overflow: hidden;
+        margin-bottom: 24px; /* 添加折叠面板的下边距 */
       }
 
       .ant-collapse-header {
         font-weight: bold;
+      }
+
+      /* 添加响应式设计 */
+      @media (max-width: 768px) {
+        .json-converter {
+          padding: 16px;
+        }
+
+        .mapping-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .action-buttons .ant-space {
+          margin-bottom: 16px;
+        }
       }
     </style>
   </head>
@@ -84,6 +119,9 @@
       const { TextArea, Search = () => null } = Input;
       const { Title } = Typography;
       const { Panel } = Collapse;
+
+      // 添加图标导入
+      const { EyeOutlined, DownloadOutlined, ClearOutlined } = icons;
 
       const KeyMappingForm = ({ keys, onMappingChange }) => {
         const [state, setState] = useState({
@@ -395,22 +433,23 @@
 
         return (
           <div className="json-converter">
-            <Title level={2}>JSON to CSV 转换器</Title>
-            <Space className="action-buttons" style={{ marginBottom: 16 }}>
-              <Button type="primary" onClick={() => handleJsonData("view")}>
-                解析
-              </Button>
-              <Button onClick={exportToJson}>导出</Button>
-              <Button danger onClick={() => handleJsonData("clear")}>
-                清空
-              </Button>
-            </Space>
+            <Title level={2} style={{ marginBottom: 24 }}>JSON to CSV 转换器</Title>
+            <div className="action-buttons">
+              <Space>
+                <Button type="primary" onClick={() => handleJsonData("view")} icon={<EyeOutlined />}>
+                  解析
+                </Button>
+                <Button onClick={exportToJson} icon={<DownloadOutlined />}>导出</Button>
+                <Button danger onClick={() => handleJsonData("clear")} icon={<ClearOutlined />}>
+                  清空
+                </Button>
+              </Space>
+            </div>
             <TextArea
               value={state.jsonData}
               onChange={(e) => updateState({ jsonData: e.target.value })}
               placeholder="请输入或粘贴JSON数据..."
               rows={10}
-              style={{ marginBottom: 16 }}
             />
             {state.parsedData && Object.keys(state.parsedData).length > 0 && (
               <KeyMappingForm
