@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>JSON to CSV 转换器</title>
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/reset.min.css"
@@ -53,7 +54,7 @@
     <script src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"></script>
 
     <script type="text/babel">
-      const { useState, useEffect, useCallback } = React;
+      const { useState, useEffect, useCallback, useMemo } = React;
       const { default: JSONView } = reactJsonView;
       const { Button, Input, Checkbox, Space, Typography, message, Collapse } =
         antd;
@@ -79,9 +80,23 @@
           });
         }, [state.mappings, state.selectedKeys]);
 
-        const updateState = (updates) => {
+        // 使用 useCallback 优化性能
+        const updateState = useCallback((updates) => {
           setState((prev) => ({ ...prev, ...updates }));
-        };
+        }, []);
+
+        // 使用 useMemo 优化过滤和排序逻辑
+        const filteredAndSortedKeys = useMemo(() => {
+          return Object.keys(state.selectedKeys)
+            .filter((key) =>
+              key.toLowerCase().includes(state.searchTerm.toLowerCase())
+            )
+            .sort((a, b) =>
+              state.sortOrder === "asc"
+                ? a.localeCompare(b)
+                : b.localeCompare(a)
+            );
+        }, [state.selectedKeys, state.searchTerm, state.sortOrder]);
 
         const handleInputChange = (key, value) => {
           updateState({ mappings: { ...state.mappings, [key]: value } });
@@ -104,10 +119,6 @@
             mappings: restMappings,
           });
         };
-
-        const filteredKeys = Object.keys(state.selectedKeys).filter((key) =>
-          key.toLowerCase().includes(state.searchTerm.toLowerCase())
-        );
 
         const toggleAllSelection = () => {
           const allSelected = Object.values(state.selectedKeys).every((v) => v);
@@ -169,39 +180,58 @@
                 </Space>
               </Space>
               <div className="mapping-grid">
-                {filteredKeys.map((key) => (
-                  <div key={key} className="mapping-item">
-                    <Checkbox
-                      checked={state.selectedKeys[key]}
-                      onChange={() => handleCheckboxChange(key)}
-                    />
-                    <Typography.Text
-                      style={{
-                        marginRight: "8px",
-                        minWidth: "60px",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {key}
-                    </Typography.Text>
-                    <Input
-                      value={state.mappings[key] || key}
-                      onChange={(e) => handleInputChange(key, e.target.value)}
-                      disabled={!state.selectedKeys[key]}
-                      style={{ width: "60%" }}
-                    />
-                    <Button danger onClick={() => handleRemoveKey(key)}>
-                      删除
-                    </Button>
-                  </div>
+                {filteredAndSortedKeys.map((key) => (
+                  <MappingItem
+                    key={key}
+                    itemKey={key}
+                    mapping={state.mappings[key]}
+                    isSelected={state.selectedKeys[key]}
+                    onCheckboxChange={handleCheckboxChange}
+                    onInputChange={handleInputChange}
+                    onRemoveKey={handleRemoveKey}
+                  />
                 ))}
               </div>
             </Panel>
           </Collapse>
         );
       };
+
+      const MappingItem = ({
+        itemKey,
+        mapping,
+        isSelected,
+        onCheckboxChange,
+        onInputChange,
+        onRemoveKey,
+      }) => (
+        <div className="mapping-item">
+          <Checkbox
+            checked={isSelected}
+            onChange={() => onCheckboxChange(itemKey)}
+          />
+          <Typography.Text
+            style={{
+              marginRight: "8px",
+              minWidth: "60px",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {itemKey}:
+          </Typography.Text>
+          <Input
+            value={mapping}
+            onChange={(e) => onInputChange(itemKey, e.target.value)}
+            disabled={!isSelected}
+            style={{ width: "60%" }}
+          />
+          <Button danger onClick={() => onRemoveKey(itemKey)}>
+            删除
+          </Button>
+        </div>
+      );
 
       const App = () => {
         const [state, setState] = useState({
