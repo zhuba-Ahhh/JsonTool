@@ -1,222 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <title>JSON to CSV Converter</title>
+    <title>JSON to CSV 转换器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/reset.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.7/dayjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/5.21.5/antd.min.js"></script>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
+        background-color: #f0f2f5;
         padding: 20px;
       }
       .json-converter {
-        width: 90vw;
+        max-width: 1000px;
         margin: auto;
         background: #fff;
-        padding: 20px;
+        padding: 24px;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .action-buttons {
-        margin-bottom: 20px;
-      }
-      .action-button {
-        background-color: #5cb85c;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-right: 10px;
-      }
-      .action-button:hover {
-        background-color: #4cae4c;
-      }
-      .parse-button {
-        background-color: #337ab7;
-      }
-      .parse-button:hover {
-        background-color: #286090;
-      }
-      .export-button {
-        background-color: #f0ad4e;
-      }
-      .export-button:hover {
-        background-color: #ec971f;
-      }
-      .clear-button {
-        background-color: #d9534f;
-      }
-      .clear-button:hover {
-        background-color: #c9302c;
-      }
-      .json-input {
-        width: 100%;
-        min-height: 150px;
-        max-height: 500px;
-        resize: vertical;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 10px;
-        box-sizing: border-box;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       }
       .json-viewer {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        padding: 10px;
+        border: 1px solid #d9d9d9;
+        border-radius: 2px;
+        padding: 16px;
+        margin-top: 16px;
       }
-      textarea {
-        width: 100%;
-        height: 200px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-      p {
-        color: red;
-        font-size: 20px;
-      }
-
-      #jsonInput {
-        min-height: 150px;
-        max-height: 500px;
-        resize: vertical;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .key-mapping-form {
-        margin-top: 20px;
-        margin-bottom: 20px;
-        border: 1px solid #ddd;
-        padding: 15px;
-        border-radius: 4px;
-      }
-
-      .toggle-button {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        user-select: none;
-        padding: 5px;
-        border-radius: 4px;
-        transition: background-color 0.3s;
-      }
-
-      .toggle-button:hover {
-        background-color: #f0f0f0;
-      }
-
-      .toggle-icon {
-        display: flex;
-        align-items: center;
-        margin-right: 5px;
-      }
-
-      .toggle-icon svg {
-        width: 15px;
-        height: 15px;
-      }
-
-      .toggle-text {
-        font-weight: bold;
-      }
-
       .mapping-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
       }
-
-      .mapping-row {
-        flex: 1 1 calc(50% - 5px);
-        min-width: 250px;
-      }
-
       .mapping-item {
         display: flex;
         align-items: center;
-        gap: 5px;
-      }
-
-      .mapping-item input[type="checkbox"] {
-        margin-right: 5px;
-      }
-
-      .mapping-item label {
-        min-width: 80px;
-        margin-right: 5px;
-      }
-
-      .mapping-item input[type="text"] {
-        flex: 1;
-        min-width: 0;
-        padding: 5px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-      }
-
-      .mapping-item button {
-        padding: 5px 10px;
-        background-color: #f44336;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-      }
-
-      .mapping-item button:hover {
-        background-color: #d32f2f;
+        gap: 8px;
       }
     </style>
   </head>
   <body>
-    <link
-      rel="preload"
-      href="https://unpkg.com/@babel/standalone/babel.min.js"
-      as="script"
-    />
-    <link
-      rel="preload"
-      href="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"
-      as="script"
-    />
-    <link
-      rel="preload"
-      href="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"
-      as="script"
-    />
-    <link
-      rel="preload"
-      href="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"
-      as="script"
-    />
-
-    <script
-      defer
-      src="https://unpkg.com/@babel/standalone/babel.min.js"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"
-    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"></script>
 
     <script type="text/babel">
       const { useState, useEffect, useCallback } = React;
       const { default: JSONView } = reactJsonView;
+      const { Button, Input, Checkbox, Space, Typography, message, Collapse } = antd;
+      const { TextArea } = Input;
+      const { Title } = Typography;
+      const { Panel } = Collapse;
 
       const KeyMappingForm = ({ keys, onMappingChange }) => {
         const [mappings, setMappings] = useState(
@@ -225,112 +59,52 @@
         const [selectedKeys, setSelectedKeys] = useState(
           keys.reduce((acc, key) => ({ ...acc, [key]: true }), {})
         );
-        const [isExpanded, setIsExpanded] = useState(true);
 
         useEffect(() => {
-          onMappingChange((prev) => ({
-            ...prev,
-            mappings,
-            selectedKeys,
-          }));
-        }, []);
+          onMappingChange({ mappings, selectedKeys });
+        }, [mappings, selectedKeys]);
 
-        const handleInputChange = useCallback(
-          (key, value) => {
-            setMappings((prev) => ({ ...prev, [key]: value }));
-            onMappingChange((prev) => ({
-              ...prev,
-              mappings: { ...prev.mappings, [key]: value },
-              selectedKeys,
-            }));
-          },
-          [onMappingChange, selectedKeys]
-        );
+        const handleInputChange = (key, value) => {
+          setMappings(prev => ({ ...prev, [key]: value }));
+        };
 
-        const handleCheckboxChange = useCallback(
-          (key) => {
-            setSelectedKeys((prev) => {
-              const newSelectedKeys = { ...prev, [key]: !prev[key] };
-              onMappingChange((prevMapping) => ({
-                ...prevMapping,
-                selectedKeys: newSelectedKeys,
-              }));
-              return newSelectedKeys;
-            });
-          },
-          [onMappingChange]
-        );
+        const handleCheckboxChange = (key) => {
+          setSelectedKeys(prev => ({ ...prev, [key]: !prev[key] }));
+        };
 
-        const handleRemoveKey = useCallback(
-          (keyToRemove) => {
-            setSelectedKeys((prev) => {
-              const { [keyToRemove]: _, ...rest } = prev;
-              onMappingChange((prevMapping) => {
-                const {
-                  mappings: prevMappings,
-                  selectedKeys: prevSelectedKeys,
-                } = prevMapping;
-                const { [keyToRemove]: __, ...restMappings } = prevMappings;
-                const { [keyToRemove]: ___, ...restSelectedKeys } =
-                  prevSelectedKeys;
-                return {
-                  mappings: restMappings,
-                  selectedKeys: restSelectedKeys,
-                };
-              });
-              return rest;
-            });
-            setMappings((prev) => {
-              const { [keyToRemove]: _, ...rest } = prev;
-              return rest;
-            });
-          },
-          [onMappingChange]
-        );
+        const handleRemoveKey = (keyToRemove) => {
+          setSelectedKeys(prev => {
+            const { [keyToRemove]: _, ...rest } = prev;
+            return rest;
+          });
+          setMappings(prev => {
+            const { [keyToRemove]: _, ...rest } = prev;
+            return rest;
+          });
+        };
 
         return (
-          <div className="key-mapping-form">
-            <div
-              className="toggle-button"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              <span className="toggle-icon">
-                {isExpanded ? (
-                  <svg viewBox="0 0 15 15" fill="currentColor">
-                    <path d="M0 5l6 6 6-6z" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 15 15" fill="currentColor">
-                    <path d="M0 14l6-6-6-6z" />
-                  </svg>
-                )}
-              </span>
-              <span className="toggle-text">表头映射</span>
-            </div>
-            {isExpanded && (
+          <Collapse defaultActiveKey={['1']}>
+            <Panel header="表头映射" key="1">
               <div className="mapping-grid">
-                {Object.keys(selectedKeys).map((key, index) => (
-                  <div key={key} className="mapping-row">
-                    <div className="mapping-item">
-                      <input
-                        type="checkbox"
-                        checked={selectedKeys[key]}
-                        onChange={() => handleCheckboxChange(key)}
-                      />
-                      <label>{key}: </label>
-                      <input
-                        type="text"
-                        value={mappings[key] || key}
-                        onChange={(e) => handleInputChange(key, e.target.value)}
-                        disabled={!selectedKeys[key]}
-                      />
-                      <button onClick={() => handleRemoveKey(key)}>删除</button>
-                    </div>
+                {Object.keys(selectedKeys).map((key) => (
+                  <div key={key} className="mapping-item">
+                    <Checkbox
+                      checked={selectedKeys[key]}
+                      onChange={() => handleCheckboxChange(key)}
+                    />
+                    <Input
+                      value={mappings[key] || key}
+                      onChange={(e) => handleInputChange(key, e.target.value)}
+                      disabled={!selectedKeys[key]}
+                      style={{ width: '60%' }}
+                    />
+                    <Button danger onClick={() => handleRemoveKey(key)}>删除</Button>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </Panel>
+          </Collapse>
         );
       };
 
@@ -346,12 +120,13 @@
             const data = JSON.parse(jsonData);
             localStorage.setItem("jsonData", jsonData);
             setParsedData(data);
+            message.success("解析成功");
             ReactDOM.render(
               <JSONView src={data} />,
               document.getElementById("jsonViewer")
             );
           } catch (error) {
-            alert("输入的JSON数据格式有误，请检查后重试！");
+            message.error("输入的JSON数据格式有误，请检查后重试！");
           }
         }, [jsonData]);
 
@@ -376,9 +151,8 @@
 
             data = Array.isArray(data) ? data : [data];
 
-            const selectedHeaders = Object.keys(
-              keyMappings.selectedKeys
-            ).filter((key) => keyMappings.selectedKeys[key]);
+            const selectedHeaders = Object.keys(keyMappings.selectedKeys)
+              .filter((key) => keyMappings.selectedKeys[key]);
 
             const csvContent = [
               selectedHeaders
@@ -388,9 +162,7 @@
                 selectedHeaders
                   .map((header) => {
                     let value = row[header] || "";
-                    value = Array.isArray(value)
-                      ? value.join("\n")
-                      : String(value);
+                    value = Array.isArray(value) ? value.join("\n") : String(value);
                     return `"${value.replace(/"/g, '""')}"`;
                   })
                   .join(",")
@@ -402,57 +174,33 @@
             });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `json数据表_${new Date()
-              .toISOString()
-              .replace(/[-:]/g, "")
-              .slice(0, 14)}.csv`;
+            link.download = `json数据表_${new Date().toISOString().replace(/[-:]/g, "").slice(0, 14)}.csv`;
             link.click();
           } catch (error) {
-            alert("输入的JSON数据格式有误，请检查后重试！");
+            message.error("导出失败，请检查数据格式！");
             console.error(error);
           }
         }, [jsonData, parsedData, keyMappings]);
 
-        const handleMappingChange = (newMappings) => {
-          setKeyMappings(newMappings);
-        };
-
         return (
           <div className="json-converter">
-            <nav className="action-buttons">
-              <button
-                onClick={viewJsonData}
-                className="action-button parse-button"
-              >
-                解析
-              </button>
-              <button
-                onClick={exportToJson}
-                className="action-button export-button"
-              >
-                导出
-              </button>
-              <button
-                onClick={clearJsonData}
-                className="action-button clear-button"
-              >
-                清空
-              </button>
-            </nav>
-            <textarea
+            <Title level={2}>JSON to CSV 转换器</Title>
+            <Space className="action-buttons" style={{ marginBottom: 16 }}>
+              <Button type="primary" onClick={viewJsonData}>解析</Button>
+              <Button onClick={exportToJson}>导出</Button>
+              <Button danger onClick={clearJsonData}>清空</Button>
+            </Space>
+            <TextArea
               value={jsonData}
               onChange={(e) => setJsonData(e.target.value)}
               placeholder="请输入或粘贴JSON数据..."
-              className="json-input"
-              rows="10"
-              cols="50"
+              rows={10}
+              style={{ marginBottom: 16 }}
             />
             {parsedData && Object.keys(parsedData).length > 0 && (
               <KeyMappingForm
-                keys={Object.keys(
-                  Array.isArray(parsedData) ? parsedData[0] : parsedData
-                )}
-                onMappingChange={handleMappingChange}
+                keys={Object.keys(Array.isArray(parsedData) ? parsedData[0] : parsedData)}
+                onMappingChange={setKeyMappings}
               />
             )}
             <div id="jsonViewer" className="json-viewer"></div>
