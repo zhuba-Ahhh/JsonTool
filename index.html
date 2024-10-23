@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>JSON to CSV Converter</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+      }
+      .json-converter {
+        width: 90vw;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .action-buttons {
+        margin-bottom: 20px;
+      }
+      .action-button {
+        background-color: #5cb85c;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+      }
+      .action-button:hover {
+        background-color: #4cae4c;
+      }
+      .parse-button {
+        background-color: #337ab7;
+      }
+      .parse-button:hover {
+        background-color: #286090;
+      }
+      .export-button {
+        background-color: #f0ad4e;
+      }
+      .export-button:hover {
+        background-color: #ec971f;
+      }
+      .clear-button {
+        background-color: #d9534f;
+      }
+      .clear-button:hover {
+        background-color: #c9302c;
+      }
+      .json-input {
+        width: 100%;
+        min-height: 150px;
+        max-height: 500px;
+        resize: vertical;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      .json-viewer {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      p {
+        color: red;
+        font-size: 20px;
+      }
+
+      #jsonInput {
+        min-height: 150px;
+        max-height: 500px;
+        resize: vertical;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .key-mapping-form {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 4px;
+      }
+
+      .mapping-grid {
+        display: flex;
+        flex-direction: column;
+      }
+      .mapping-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .mapping-item {
+        width: 48%;
+        display: flex;
+        align-items: center;
+      }
+      .mapping-item label {
+        width: 30%;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      .mapping-item input {
+        width: 70%;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .toggle-button svg {
+        margin-left: 5px;
+        width: 15px;
+        height: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <link rel="preload" href="https://unpkg.com/@babel/standalone/babel.min.js" as="script">
+    <link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js" as="script">
+    <link rel="preload" href="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" as="script">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js" as="script">
+
+    <script defer src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script defer src="https://cdn.bootcdn.net/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script defer src="https://cdn.bootcdn.net/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/react-json-view@1.21.3/dist/main.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+      const { default: JSONView } = reactJsonView;
+
+      const KeyMappingForm = ({ keys, onMappingChange }) => {
+        const [mappings, setMappings] = useState({});
+        const [isExpanded, setIsExpanded] = useState(true);
+
+        const handleInputChange = (key, value) => {
+          setMappings((prev) => ({ ...prev, [key]: value }));
+        };
+
+        const handleBlur = (key, value) => {
+          onMappingChange({ ...mappings, [key]: value });
+        };
+
+        return (
+          <div className="key-mapping-form">
+            <div 
+              className="toggle-button"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <svg viewBox="0 0 15 15" fill="currentColor">
+                  <path d="M0 5l6 6 6-6z" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 15 15" fill="currentColor">
+                  <path d="M0 14l6-6-6-6z" />
+                </svg>
+              )}
+            </div>
+            {isExpanded && (
+              <div className="mapping-grid">
+                {keys.reduce((rows, key, index) => {
+                  if (index % 2 === 0) rows.push([]);
+                  rows[rows.length - 1].push(
+                    <div key={key} className="mapping-item">
+                      <label>{key}: </label>
+                      <input
+                        type="text"
+                        value={mappings[key] || key}
+                        onChange={(e) => handleInputChange(key, e.target.value)}
+                        onBlur={(e) => handleBlur(key, e.target.value)}
+                      />
+                    </div>
+                  );
+                  return rows;
+                }, []).map((row, rowIndex) => (
+                  <div key={rowIndex} className="mapping-row">
+                    {row}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const App = () => {
+        const [jsonData, setJsonData] = useState(
+          localStorage.getItem("jsonData") || "{}"
+        );
+        const [parsedData, setParsedData] = useState(null);
+        const [keyMappings, setKeyMappings] = useState({});
+
+        useEffect(() => {
+          if (jsonData !== "{}") {
+            viewJsonData(true);
+          }
+        }, []);
+
+        const handleJsonChange = (event) => {
+          setJsonData(event.target.value);
+        };
+
+        const clearJsonData = () => {
+          setJsonData("{}");
+          localStorage.setItem("jsonData", "{}");
+          ReactDOM.render(null, document.getElementById("jsonViewer"));
+        };
+
+        const viewJsonData = (isInit = false) => {
+          try {
+            const data = JSON.parse(jsonData);
+            localStorage.setItem("jsonData", jsonData);
+            setParsedData(data);
+            ReactDOM.render(
+              <JSONView src={data} />,
+              document.getElementById("jsonViewer")
+            );
+          } catch (error) {
+            alert("输入的JSON数据格式有误，请检查后重试！");
+          }
+        };
+
+        const exportToJson = () => {
+          try {
+            let data = parsedData || JSON.parse(jsonData);
+            localStorage.setItem("jsonData", jsonData);
+
+            data = Array.isArray(data) ? data : [data];
+            const headers = Object.keys(data[0]);
+            const csvContent = [
+              headers
+                .map((header) => `"${keyMappings[header] || header}"`)
+                .join(","),
+              ...data.map((row) =>
+                headers
+                  .map((header) => {
+                    let value = row[header] || "";
+                    value = Array.isArray(value)
+                      ? value.join("\n")
+                      : String(value);
+                    return `"${value.replace(/"/g, '""')}"`;
+                  })
+                  .join(",")
+              ),
+            ].join("\n");
+
+            const blob = new Blob(["\uFEFF" + csvContent], {
+              type: "text/csv;charset=utf-8;",
+            });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `json数据表_${new Date()
+              .toISOString()
+              .replace(/[-:]/g, "")
+              .slice(0, 14)}.csv`;
+            link.click();
+          } catch (error) {
+            alert("输入的JSON数据格式有误，请检查后重试！");
+          }
+        };
+
+        const handleMappingChange = (newMappings) => {
+          setKeyMappings(newMappings);
+        };
+
+        return (
+          <div className="json-converter">
+            <nav className="action-buttons">
+              <button
+                onClick={() => viewJsonData()}
+                className="action-button parse-button"
+              >
+                解析
+              </button>
+              <button
+                onClick={exportToJson}
+                className="action-button export-button"
+              >
+                导出
+              </button>
+              <button
+                onClick={clearJsonData}
+                className="action-button clear-button"
+              >
+                清空
+              </button>
+            </nav>
+            <textarea
+              value={jsonData}
+              onChange={(e) => setJsonData(e.target.value)}
+              placeholder="请输入或粘贴JSON数据..."
+              className="json-input"
+              rows="10"
+              cols="50"
+            />
+            {parsedData && (
+              <KeyMappingForm
+                keys={Object.keys(
+                  Array.isArray(parsedData) ? parsedData[0] : parsedData
+                )}
+                onMappingChange={handleMappingChange}
+              />
+            )}
+            <div id="jsonViewer" className="json-viewer"></div>
+          </div>
+        );
+      };
+
+      ReactDOM.createRoot(document.getElementById("app")).render(<App />);
+    </script>
+    <div id="app"></div>
+  </body>
+</html>
