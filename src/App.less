@@ -1,0 +1,113 @@
+body {
+  background-color: #f0f2f5;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+.json-converter {
+  max-width: 1200px;
+  margin: auto;
+  background: #fff;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.json-viewer {
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 24px;
+  background-color: #fafafa;
+  overflow: auto;
+  max-height: 400px;
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.mapping-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 8px;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.mapping-item:hover {
+  background-color: #f0f0f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.action-buttons .ant-space {
+  flex-grow: 1;
+  margin-bottom: 12px;
+}
+
+.action-buttons .ant-btn {
+  min-width: 120px;
+  height: 40px;
+  font-size: 16px;
+}
+
+.ant-collapse {
+  margin-top: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ant-collapse-header {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.ant-input-search {
+  width: 100% !important;
+  max-width: 300px;
+}
+
+.ant-typography {
+  margin-bottom: 0 !important;
+}
+
+/* 添加响应式设计 */
+@media (max-width: 768px) {
+  .json-converter {
+    padding: 20px;
+  }
+
+  .mapping-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons .ant-space {
+    margin-bottom: 16px;
+  }
+
+  .ant-input-search {
+    max-width: 100%;
+  }
+}
