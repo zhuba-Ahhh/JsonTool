@@ -1,15 +1,13 @@
 import {
-  InfoCircleOutlined,
   MinusSquareOutlined,
   CheckSquareOutlined,
   SortAscendingOutlined,
   SortDescendingOutlined,
 } from "@ant-design/icons";
-import { Collapse, Space, Button, Input } from "antd";
+import { Space, Button, Input } from "antd";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MappingItem } from "./MappingItem";
 
-const { Panel } = Collapse;
 const { Search } = Input;
 
 type KeyMappingFormProps = {
@@ -116,53 +114,53 @@ const KeyMappingForm = ({ keys, onMappingChange }: KeyMappingFormProps) => {
   };
 
   return (
-    <Collapse defaultActiveKey={["1"]}>
-      <Panel header="表头映射" key="1" extra={<InfoCircleOutlined />}>
-        <Space
-          style={{
-            width: "100%",
-            justifyContent: "space-between",
-            marginBottom: "16px",
-          }}
-        >
-          {Search && (
-            <Search
-              placeholder="搜索键名"
-              onSearch={(value) => updateState({ searchTerm: value })}
-              onChange={(e) => updateState({ searchTerm: e.target.value })}
-              style={{ width: "100%", maxWidth: "300px" }}
-              allowClear
-            />
-          )}
-          <Space>
-            <Button
-              onClick={toggleAllSelection}
-              icon={
-                Object.values(state.selectedKeys).every((v) => v) ? (
-                  <MinusSquareOutlined />
-                ) : (
-                  <CheckSquareOutlined />
-                )
-              }
-            >
-              {Object.values(state.selectedKeys).every((v) => v)
-                ? "取消全选"
-                : "全选"}
-            </Button>
-            <Button
-              onClick={toggleSortOrder}
-              icon={
-                state.sortOrder === "asc" ? (
-                  <SortAscendingOutlined />
-                ) : (
-                  <SortDescendingOutlined />
-                )
-              }
-            >
-              {state.sortOrder === "asc" ? "按字母降序" : "按字母升序"}
-            </Button>
-          </Space>
+    <>
+      <Space
+        style={{
+          width: "100%",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+        }}
+      >
+        {Search && (
+          <Search
+            placeholder="搜索键名"
+            onSearch={(value) => updateState({ searchTerm: value })}
+            onChange={(e) => updateState({ searchTerm: e.target.value })}
+            style={{ width: "100%", maxWidth: "300px" }}
+            allowClear
+          />
+        )}
+        <Space>
+          <Button
+            onClick={toggleAllSelection}
+            icon={
+              Object.values(state.selectedKeys).every((v) => v) ? (
+                <MinusSquareOutlined />
+              ) : (
+                <CheckSquareOutlined />
+              )
+            }
+          >
+            {Object.values(state.selectedKeys).every((v) => v)
+              ? "取消全选"
+              : "全选"}
+          </Button>
+          <Button
+            onClick={toggleSortOrder}
+            icon={
+              state.sortOrder === "asc" ? (
+                <SortAscendingOutlined />
+              ) : (
+                <SortDescendingOutlined />
+              )
+            }
+          >
+            {state.sortOrder === "asc" ? "按字母降序" : "按字母升序"}
+          </Button>
         </Space>
+      </Space>
+      {filteredAndSortedKeys.length > 0 && (
         <div className="mapping-grid">
           {filteredAndSortedKeys.map((key) => (
             <MappingItem
@@ -176,8 +174,8 @@ const KeyMappingForm = ({ keys, onMappingChange }: KeyMappingFormProps) => {
             />
           ))}
         </div>
-      </Panel>
-    </Collapse>
+      )}
+    </>
   );
 };
 

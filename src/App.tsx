@@ -3,9 +3,8 @@ import {
   DownloadOutlined,
   ClearOutlined,
 } from "@ant-design/icons";
-import { message, Space, Button, Typography, Input } from "antd";
+import { message, Space, Button, Typography, Input, Collapse } from "antd";
 import { useState, useCallback, useEffect } from "react";
-import ReactDOM from "react-dom";
 import { KeyMappingForm } from "./components/KeyMappingForm";
 import JSONView from "react-json-view";
 import "./App.less";
@@ -82,10 +81,6 @@ const App = () => {
           });
           localStorage.setItem("jsonData", "{}");
         }
-        ReactDOM.render(
-          <JSONView src={data} />,
-          document.getElementById("jsonViewer")
-        );
       } catch (error) {
         message.error("输入的JSON数据格式有误，请检查后重试！");
         console.error(error);
@@ -166,21 +161,51 @@ const App = () => {
           </Button>
         </Space>
       </div>
-      <TextArea
-        value={state.jsonData}
-        onChange={(e) => updateState({ jsonData: e.target.value })}
-        placeholder="请输入或粘贴JSON数据..."
-        rows={10}
-        style={{ marginBottom: "16px" }}
-      />
-      {state.parsedData && Object.keys(state.parsedData).length > 0 && (
-        <KeyMappingForm
-          keys={state.keys}
-          onMappingChange={(mappings) => updateState({ keyMappings: mappings })}
-        />
-      )}
-      <div id="jsonViewer" className="json-viewer"></div>
-      <JsonSchemaToTypescript value={state.parsedData} />
+      <>
+        <Collapse
+          defaultActiveKey={["TextArea"]}
+          items={[
+            {
+              key: "TextArea",
+              label: "JSON数据",
+              children: (
+                <TextArea
+                  value={state.jsonData}
+                  onChange={(e) => updateState({ jsonData: e.target.value })}
+                  placeholder="请输入或粘贴JSON数据..."
+                  rows={10}
+                />
+              ),
+            },
+            {
+              key: "KeyMappingForm",
+              label: "表头映射",
+              children: (
+                <KeyMappingForm
+                  keys={state.keys}
+                  onMappingChange={(mappings) =>
+                    updateState({ keyMappings: mappings })
+                  }
+                />
+              ),
+            },
+            {
+              key: "JSONView",
+              label: "JSON预览",
+              children: (
+                <div className="json-viewer">
+                  {state.parsedData && <JSONView src={state.parsedData} />}
+                </div>
+              ),
+            },
+            {
+              key: "JsonSchemaToTypescript",
+              label: "JSONToTypes",
+              children: <JsonSchemaToTypescript value={state.parsedData} />,
+            },
+          ]}
+        ></Collapse>
+      </>
     </div>
   );
 };
