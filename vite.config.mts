@@ -15,6 +15,7 @@ export default defineConfig({
       modules: ["react", "react-dom"],
     }),
   ],
+  base: process.env.NODE_ENV === "production" ? "./" : "/",
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 500, // 单位 kb
